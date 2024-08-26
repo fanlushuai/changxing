@@ -806,8 +806,24 @@ const YL = {
 
     let dataPostion = 0;
     let order = {};
+    let hasGetTime = false;
     for (let r of res) {
-      if (r.text && r.text.indexOf("收益（元）") > -1) {
+      let rText = r.text;
+      if (!hasGetTime) {
+        if (
+          rText.indexOf("今天") > -1 ||
+          rText.indexOf("明天") > -1 ||
+          rText.indexOf("后天") > -1
+        ) {
+          log("日期 %s", rText);
+          order.use_date = rText;
+          hasGetTime = true;
+        }
+        // 日期在第一位的。没有找到，日期，其他的都不用看了。
+        continue;
+      }
+
+      if (rText && rText.indexOf("收益（元）") > -1) {
         dataPostion = 1;
         continue;
       }
@@ -817,32 +833,35 @@ const YL = {
       }
 
       //有时候下一个是航班号。
-      if (dataPostion == 1 && r.text.indexOf("航班号") > -1) {
+      if (dataPostion == 1 && rText.indexOf("航班号") > -1) {
         log("包含航班号");
         continue;
       }
 
       if (dataPostion == 1) {
-        log("里程 %s km", r.text);
-        order.dis = r.text;
+        log("里程 %s km", rText);
+        order.dis = rText;
       } else if (dataPostion == 2) {
-        log("预计用时 %s", r.text);
-        order.kmTime = r.text;
+        //   log("预计用时 %s", rText);
+        //   order.kmTime = rText;
       } else if (dataPostion == 3) {
-        log("收益 %s 元", r.text);
-        order.money = r.text;
-      } else if (r.text == "抢单") {
+        log("收益 %s 元", rText);
+        order.price = rText;
+      } else if (rText == "抢单") {
         log("找到抢单按钮");
-        data.qiangBounds = r.bounds;
+        order.qiangBounds = r.bounds;
         break;
       }
 
       dataPostion++;
     }
 
-    log(data);
+    if (order.price && order.dis && order.qiangBounds) {
+      log(order);
+      return order;
+    }
 
-    return data;
+    return null;
   },
   findOrder: function () {
     // 确保在那个界面
@@ -856,7 +875,7 @@ const YL = {
         log("可能弹出订单界面");
         log("进行截图分析");
         let order = this.getData();
-        if (order.price != null) {
+        if (order) {
           return order;
         }
       }
@@ -908,12 +927,21 @@ const YL = {
       // 2024-04-16 16:16
       if (CF.conditionTimeRange) {
         // log("对比时间")
-        let targetDateArr = order.use_date.split(" ");
-        let orderDate = new Date(targetDateArr[0]);
-        let orderHour = parseInt(targetDateArr[1].split(":")[0]);
-        // log("orderHour %s", orderHour)
 
         let today = new Date();
+
+        let timeStr = order.use_date;
+        let orderDate = null;
+        if (timeStr.indexOf("今天") > -1) {
+          orderDate = today;
+        } else if (timeStr.indexOf("明天") > -1) {
+          orderDate = new Date(today.getTime() + 24 * oneHour);
+        } else if (timeStr.indexOf("后天") > -1) {
+          orderDate = new Date(today.getTime() + 2 * 24 * oneHour);
+        }
+        // 8月29日21:05  明天21:05 后天21:05 今天21:05
+        let orderHour = parseInt(order.use_date.split("天")[1].split(":"));
+
         let tomorrowDate = new Date(today.getTime() + 24 * oneHour);
         let tomorrow2Date = new Date(today.getTime() + 2 * 24 * oneHour);
 

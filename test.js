@@ -121,19 +121,32 @@ let OCR = {
 
 OCR.autoPermisionScreenCapture();
 
-sleep(5 * 1000);
+// sleep(5 * 1000);
 
 function getData() {
   let res = OCR.getPostionByOCR(0, 0, device.width, device.height);
-  // log(res);
+  log(res);
 
   let dataPostion = 0;
-  let data = {};
+  let order = {};
+  let hasGetTime = false;
   for (let r of res) {
-    // todo
-    order.use_date = r.text;
+    let rText = r.text;
+    if (!hasGetTime) {
+      if (
+        rText.indexOf("今天") > -1 ||
+        rText.indexOf("明天") > -1 ||
+        rText.indexOf("后天") > -1
+      ) {
+        log("日期 %s", rText);
+        order.use_date = rText;
+        hasGetTime = true;
+      }
+      // 日期在第一位的。没有找到，日期，其他的都不用看了。
+      continue;
+    }
 
-    if (r.text && r.text.indexOf("收益（元）") > -1) {
+    if (rText && rText.indexOf("收益（元）") > -1) {
       dataPostion = 1;
       continue;
     }
@@ -143,54 +156,57 @@ function getData() {
     }
 
     //有时候下一个是航班号。
-    if (dataPostion == 1 && r.text.indexOf("航班号") > -1) {
+    if (dataPostion == 1 && rText.indexOf("航班号") > -1) {
       log("包含航班号");
       continue;
     }
 
     if (dataPostion == 1) {
-      log("里程 %s km", r.text);
-      data.km = r.text;
+      log("里程 %s km", rText);
+      order.dis = rText;
     } else if (dataPostion == 2) {
-      //   log("预计用时 %s", r.text);
-      //   data.kmTime = r.text;
+      //   log("预计用时 %s", rText);
+      //   order.kmTime = rText;
     } else if (dataPostion == 3) {
-      log("收益 %s 元", r.text);
-      data.price = r.text;
-    } else if (r.text == "抢单") {
+      log("收益 %s 元", rText);
+      order.price = rText;
+    } else if (rText == "抢单") {
       log("找到抢单按钮");
-      data.qiangBounds = r.bounds;
+      order.qiangBounds = r.bounds;
       break;
     }
 
     dataPostion++;
   }
 
-  log(data);
+  if (order.price && order.km) {
+    log(order);
+    return order;
+  }
 
-  return data;
+  return null;
 }
 
-// getData();
+getData();
 
-let yilian = {
-  isAlert() {
-    while (1) {
-      sleep(500); //时间别太长，也别太短。太长费手机，太短速度达不到
+// let yilian = {
+//   isAlert() {
+//     while (1) {
+//       sleep(500); //时间别太长，也别太短。太长费手机，太短速度达不到
 
-      if (text("出车中...").findOnce()) {
-        // 位于这个界面，才进行截图判断。
-      } else {
-        // 可能是弹出框了。
-        // 如果出现，找不到任何元素的界面。就认为是弹出框了。
-        let eles = visibleToUser(true)
-          .boundsInside(0, 0, device.width - 1, device.height - 1)
-          .find();
-        if (eles == null) {
-          log("可能弹出订单");
-          log("截图分析");
-        }
-      }
-    }
-  },
-};
+//       if (text("出车中...").findOnce()) {
+//         // 位于这个界面，才进行截图判断。
+//       } else {
+//         // 可能是弹出框了。
+//         // 如果出现，找不到任何元素的界面。就认为是弹出框了。
+//         let eles = visibleToUser(true)
+//           .boundsInside(0, 0, device.width - 1, device.height - 1)
+//           .find();
+//         if (eles == null) {
+//           log("可能弹出订单");
+//           log("截图分析");
+//         }
+//       }
+//     }
+//   },
+// };
