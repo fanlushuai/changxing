@@ -138,16 +138,6 @@ ui.layout(
                   checked="{{auto.service!=null}}"
                 />
               </vertical>
-              <vertical>
-                <Switch
-                  id="consoleShow"
-                  text="控制台悬浮窗"
-                  textStyle="bold"
-                  textColor="#000000"
-                  textSize="16sp"
-                  checked="true"
-                />
-              </vertical>
             </horizontal>
             <vertical marginTop="14">
               <Switch
@@ -815,7 +805,7 @@ const YL = {
           rText.indexOf("明天") > -1 ||
           rText.indexOf("后天") > -1
         ) {
-          log("日期 %s", rText);
+          // log("日期 %s", rText);
           order.use_date = rText;
           hasGetTime = true;
         }
@@ -867,17 +857,24 @@ const YL = {
     // 确保在那个界面
     while (1) {
       sleep(300);
-      let eles = visibleToUser(true)
-        .boundsInside(0, 0, device.width - 1, device.height - 1)
-        .find();
-      if (eles == null) {
-        // 订单弹出页面，获取不到任何的界面数据
-        log("可能弹出订单界面");
-        log("进行截图分析");
-        let order = this.getData();
-        if (order) {
-          return order;
-        }
+      // let eles = visibleToUser(true)
+      //   .boundsInside(0, 0, device.width - 1, device.height - 1)
+      //   .find();
+      // if (eles == null) {
+      //   // 订单弹出页面，获取不到任何的界面数据
+      //   log("可能弹出订单界面");
+      //   log("进行截图分析");
+      //   let order = this.getData();
+      //   if (order) {
+      //     return order;
+      //   }
+      // }
+
+      // test
+
+      let order = this.getData();
+      if (order) {
+        return order;
       }
     }
   },
@@ -1078,22 +1075,22 @@ ui.bt.click(function () {
   }
   log(CF);
 
-  if (ui.consoleShow.isChecked()) {
-    threads.start(() => {
-      let dw = device.width;
-      let dh = device.height;
-      let cw = (dw * 1) / 3;
-      let ch = (dh * 5) / 10;
+  // if (ui.consoleShow.isChecked()) {
+  //   threads.start(() => {
+  //     let dw = device.width;
+  //     let dh = device.height;
+  //     let cw = (dw * 1) / 3;
+  //     let ch = (dh * 5) / 10;
 
-      console.setTitle("自动接单");
-      console.show(true);
-      console.setCanInput(false);
-      sleep(100); //等待一会，才能设置尺寸成功
-      console.setSize(cw, ch); //需要前面等待一会
-      console.setPosition(dw - (cw + 50), 50);
-      console.setMaxLines(300);
-    });
-  }
+  //     console.setTitle("自动接单");
+  //     console.show(true);
+  //     console.setCanInput(false);
+  //     sleep(100); //等待一会，才能设置尺寸成功
+  //     console.setSize(cw, ch); //需要前面等待一会
+  //     console.setPosition(dw - (cw + 50), 50);
+  //     console.setMaxLines(300);
+  //   });
+  // }
 
   threads.start(function () {
     YL.waitForAmazingOrder();
@@ -1131,6 +1128,100 @@ ui.emitter.on("resume", function () {
   // 此时根据无障碍服务的开启情况，同步开关的状态
   ui.autoService.checked = auto.service != null;
 });
+
+threads.start(function () {
+  日志窗口();
+  home();
+  threads.start(悬浮);
+  sleep(2000);
+});
+
+function 日志窗口() {
+  floatyLogInit(5, device.width * 0.3, device.height * 0.4, true); //主显示
+  device.wakeUp();
+}
+
+function slog(nr) {
+  floatyLog(nr);
+}
+
+function 悬浮() {
+  var window = floaty.window(
+    <vertical w="*">
+      <linear id="h" gravity="center">
+        <button margin="0" w="60" id="action" text="启动" textSize="15sp" />
+      </linear>
+      <linear id="h1" gravity="center">
+        <button margin="0" w="0" id="bt2" text="隐藏" textSize="15sp" />
+      </linear>
+      <linear id="h2" gravity="center">
+        <button margin="0" w="60" id="bt3" text="退出" textSize="15sp" />
+      </linear>
+    </vertical>
+  );
+  window.setPosition(0, device.height / 2);
+  setInterval(() => {}, 1000);
+  var execution = null;
+  //记录按键被按下时的触摸坐标
+  var x = 0,
+    y = 0;
+  //记录按键被按下时的悬浮窗位置
+  var windowX, windowY;
+  //记录按键被按下的时间以便判断长按等动作
+  var downTime;
+  window.action.setOnTouchListener(function (view, event) {
+    switch (event.getAction()) {
+      case event.ACTION_DOWN:
+        x = event.getRawX();
+        y = event.getRawY();
+        windowX = window.getX();
+        windowY = window.getY();
+        downTime = new Date().getTime();
+        return true;
+      case event.ACTION_MOVE:
+        //移动手指时调整悬浮窗位置
+        window.setPosition(
+          windowX + (event.getRawX() - x),
+          windowY + (event.getRawY() - y)
+        );
+        //如果按下的时间超过1.5秒判断为长按，退出脚本
+        if (new Date().getTime() - downTime > 30000) {
+          exit();
+        }
+        return true;
+      case event.ACTION_UP:
+        //手指弹起时如果偏移很小则判断为点击
+        if (
+          Math.abs(event.getRawY() - y) < 5 &&
+          Math.abs(event.getRawX() - x) < 5
+        ) {
+          onClick();
+        }
+        return true;
+    }
+    return true;
+  });
+  window.bt2.click(() => {
+    window.h.visibility = 8;
+    window.h1.visibility = 8;
+    window.h2.visibility = 8;
+  });
+  window.bt3.click(() => {
+    toast("退出脚本");
+    console.hide();
+    engines.stopAll();
+  });
+  function onClick() {
+    if (window.action.getText() == "启动") {
+      线 = threads.start(日志窗口);
+      线1 = threads.start(听书操作);
+      window.action.setText("停止");
+    } else {
+      window.action.setText("启动");
+      停止脚本();
+    }
+  }
+}
 
 // let order = { dis: 71, price: 132 };
 // log(condition.powerOrderOk(order));
