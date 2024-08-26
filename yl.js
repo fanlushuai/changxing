@@ -912,7 +912,7 @@ const YL = {
       if (lastOrder.price == order.price && lastOrder.dis == order.dis) {
       } else {
         slog("--> 新订单");
-        slog("--> 价格 %s", order.price, " 公里数", order.dis);
+        slog("--> 价格 " + order.price + " 公里数 " + order.dis);
         log(order);
         lastOrder = order;
       }
@@ -1261,7 +1261,7 @@ function floatyLogInit(linesCount, x, y, islog) {
 
   let nowlogArr = [];
   floatyLog = function () {
-    let s = "[" + dateFormat(new Date(), "hh:mm:ss") + "] ";
+    let s = "[" + dateFormat(new Date(), "mm:ss") + "] ";
     for (let param of arguments) s += param + " ";
     nowlogArr.push(s);
 
