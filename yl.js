@@ -1208,7 +1208,7 @@ function 悬浮() {
   });
   window.bt3.click(() => {
     toast("退出脚本");
-    console.hide();
+    // console.hide();
     engines.stopAll();
   });
   function onClick() {
@@ -1223,6 +1223,12 @@ function 悬浮() {
       停止脚本();
     }
   }
+}
+
+function 停止脚本() {
+  toastLog("正常退出脚本");
+  // console.hide();
+  threads.shutDownAll();
 }
 
 function floatyLogInit(linesCount, x, y, islog) {
