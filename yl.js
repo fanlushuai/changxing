@@ -893,7 +893,7 @@ const YL = {
       return year == year2 && month == month2 && day == day2;
     }
 
-    log("开始匹配……");
+    slog("开始匹配……");
     let reTryTimes = 5;
     let tryCount = 0;
     let lastPrice = 0;
@@ -911,7 +911,8 @@ const YL = {
       // 只打印一次日志
       if (lastOrder.price == order.price && lastOrder.dis == order.dis) {
       } else {
-        log("--> 新订单");
+        slog("--> 新订单");
+        slog("--> 价格 %s", order.price, " 公里数", order.dis);
         log(order);
         lastOrder = order;
       }
@@ -1006,6 +1007,7 @@ const YL = {
       // 排除，是上一个订单。
       if (lastPrice != order.price) {
         console.warn("### 匹配到订单！%j", order);
+        slog("### 匹配到订单！" + order.price);
         lastPrice = order.price;
         tryCount = 0;
       }
@@ -1020,8 +1022,10 @@ const YL = {
       tryCount = tryCount + 1;
       if (result) {
         log("抢单点击[%s/%s]成功", tryCount, reTryTimes);
+        slog("点击抢单 " + tryCount + "/" + reTryTimes + " 成功");
       } else {
         log("抢单点击失败");
+        slog("点击抢单失败");
       }
     }
   },
@@ -1040,7 +1044,7 @@ const YL = {
       log("居中 点击 (%d,%d)", x, y);
       return press(x, y, 1);
     }
-    log("抢单测试" + bounds);
+    slog("抢单测试" + bounds);
     // return false; //测试需要，先注释掉
   },
 };
@@ -1093,7 +1097,10 @@ ui.bt.click(function () {
   // }
 
   threads.start(function () {
-    YL.waitForAmazingOrder();
+    日志窗口();
+    home();
+    threads.start(悬浮);
+    sleep(2000);
     // YL.openTargetLocation()
   });
   device.keepScreenOn(3600 * 1000);
@@ -1129,15 +1136,8 @@ ui.emitter.on("resume", function () {
   ui.autoService.checked = auto.service != null;
 });
 
-threads.start(function () {
-  日志窗口();
-  home();
-  threads.start(悬浮);
-  sleep(2000);
-});
-
 function 日志窗口() {
-  floatyLogInit(5, device.width * 0.3, device.height * 0.4, true); //主显示
+  floatyLogInit(3, device.width * 0.3, device.height * 0.6, true); //主显示
   device.wakeUp();
 }
 
@@ -1214,7 +1214,9 @@ function 悬浮() {
   function onClick() {
     if (window.action.getText() == "启动") {
       线 = threads.start(日志窗口);
-      线1 = threads.start(听书操作);
+      线1 = threads.start(function () {
+        YL.waitForAmazingOrder();
+      });
       window.action.setText("停止");
     } else {
       window.action.setText("启动");
@@ -1223,5 +1225,93 @@ function 悬浮() {
   }
 }
 
-// let order = { dis: 71, price: 132 };
-// log(condition.powerOrderOk(order));
+function floatyLogInit(linesCount, x, y, islog) {
+  linesCount = linesCount || 6;
+  if (typeof linesCount != "number") linesCount = 6;
+  if (typeof x != "number") x = 0;
+  if (typeof y != "number") y = 10;
+  if (typeof islog != "boolean") islog = true;
+
+  ww = floaty.rawWindow(
+    <horizontal
+      id="move"
+      background="#000000"
+      paddingLeft="10"
+      paddingRight="10"
+      w="*"
+    >
+      <button
+        id="log"
+        textSize="13dp"
+        textColor="#0bf613"
+        style="Widget/AppCompat.Button.Borderless"
+        text="[运行日志]"
+        textStyle="bold"
+        layout_gravity="right"
+        layout_weight="5"
+        layout_width="wrap_content"
+        layout_height="wrap_content"
+      />
+    </horizontal>
+  );
+  ww.setTouchable(false);
+  ui.run(() => {
+    ww.setPosition(x, y);
+  });
+
+  let nowlogArr = [];
+  floatyLog = function () {
+    let s = "[" + dateFormat(new Date(), "hh:mm:ss") + "] ";
+    for (let param of arguments) s += param + " ";
+    nowlogArr.push(s);
+
+    if (nowlogArr.length > linesCount) nowlogArr.shift();
+    let printContent = nowlogArr.join("\n");
+    ui.run(() => {
+      ww.log.text(printContent);
+    });
+    if (islog) log(s);
+  };
+
+  floatyShow = function (x, y) {
+    let _x = x || 0;
+    let _y = y || 10;
+    ui.run(() => {
+      ww.setPosition(_x, _y);
+    });
+  };
+
+  floatyHide = function () {
+    ui.run(() => {
+      ww.setPosition(3000, 3000);
+    });
+  };
+  function dateFormat(date, fmt) {
+    let o = {
+      "M+": date.getMonth() + 1,
+      "d+": date.getDate(),
+      "h+": date.getHours(),
+      "m+": date.getMinutes(),
+      "s+": date.getSeconds(),
+      S: date.getMilliseconds(),
+    };
+    if (/(y+)/.test(fmt)) {
+      fmt = fmt.replace(
+        RegExp.$1,
+        (date.getFullYear() + "").substr(4 - RegExp.$1.length)
+      );
+    }
+
+    for (var k in o) {
+      if (new RegExp("(" + k + ")").test(fmt)) {
+        fmt = fmt.replace(
+          RegExp.$1,
+          RegExp.$1.length == 1
+            ? o[k]
+            : ("00" + o[k]).substr(("" + o[k]).length)
+        );
+      }
+    }
+    return fmt;
+  }
+}
