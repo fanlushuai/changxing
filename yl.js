@@ -1,5 +1,126 @@
 "ui";
 
+let hasGetCapturePremission = false;
+
+function once(fn, context) {
+  var result;
+  // 注意，此处为了防止，并发，加了sync。
+  return sync(function () {
+    if (fn) {
+      log("执行一次");
+      result = fn.apply(context || this, arguments);
+      fn = null;
+    } else {
+      // log("已经执行")
+    }
+    return result;
+  });
+}
+
+const OCR = {
+  autoPermisionScreenCapture: once(function () {
+    if (hasGetCapturePremission) {
+      log("当前有截图权限");
+      return;
+    }
+
+    console.log("自动申请截图权限");
+    let Thread = threads.start(function () {
+      if (auto.service == null) {
+        toast("无障碍未开启");
+        return;
+      }
+
+      let ele = textMatches(
+        /(.*录屏或投屏.*|.*录制或投射.*|允许|立即开始|统一)/
+      ).findOne(10 * 1000);
+
+      if (ele == null) {
+        // toast("未能发现截图权限弹窗")
+        return;
+      }
+      log("已经弹出权限确认界面");
+
+      let eles = textMatches(
+        /(.*录屏或投屏.*|.*录制或投射.*|允许|立即开始|统一)/
+      ).find();
+
+      if (eles.empty()) {
+        // toast("未能发现截图权限弹窗")
+        return;
+      }
+
+      let notMiui14Style = false;
+      for (let e of eles) {
+        let text = e.text();
+        if (
+          text.indexOf("立即开始") > 0 ||
+          text.indexOf("允许") > 0 ||
+          text.indexOf("统一")
+        ) {
+          notMiui14Style = true;
+          break;
+        }
+      }
+
+      if (notMiui14Style) {
+        log("可以找到立即开始");
+        let allowEle = textMatches(/(允许|立即开始|统一)/).findOne(10 * 1000);
+        if (allowEle) {
+          sleep(1500);
+          if (allowEle.clickable()) {
+            log("点击 元素");
+            let ok = allowEle.click();
+            return ok;
+          } else {
+            let b = allowEle.bounds();
+            log("按压 坐标");
+            return press(b.centerX(), b.centerY(), 1);
+          }
+        }
+      } else {
+        //  在miui 14中，立即开始，不可找到。使用推测的方式来处理
+        log("推测 立即开始 坐标");
+
+        let cancel = text("取消").findOne(10 * 10000);
+        if (cancel) {
+          log("取消 按钮 存在");
+          let x = device.width - cancel.bounds().centerX();
+          let y = cancel.bounds().centerY();
+
+          log("点击 推测坐标 %s %s", x, y);
+          sleep(500);
+          press(x, y, 1);
+        } else {
+          log("取消按钮不存在，推测失败");
+        }
+      }
+    });
+
+    log("申请权限");
+
+    //在一个会话中，调用两次申请截图权限。就会卡死。
+    if (!requestScreenCapture(false)) {
+      toast("请求截图权限失败");
+      return false;
+    } else {
+      Thread.interrupt();
+      log("已获得截图权限");
+      hasGetCapturePremission = true;
+      return true;
+    }
+  }),
+  getPostionByOCR: function (x, y, w, h) {
+    this.autoPermisionScreenCapture();
+    var img = captureScreen(); // 截取当前屏幕图像
+    var clip = images.clip(img, x, y, w, h); // 裁剪图像
+    let res = paddle.ocr(clip);
+    // [ OcrResult(confidence=0.93765306, preprocessTime=15.0, inferenceTime=465.0, text=20:35, bounds=Rect(85, 37 - 303, 85)),
+    //   OcrResult(confidence=0.696329, preprocessTime=15.0, inferenceTime=465.0, text=g4, bounds=Rect(739, 35 - 1020, 87))]
+    return res;
+  },
+};
+
 ui.layout(
   <frame w="*" h="*" bg="#F6FFE3" gravity="center">
     <vertical>
@@ -297,54 +418,10 @@ const CF = {
     // 更新表单内容，到本地内存
     return storages.create("yl342343243");
   },
-  // todo
-  loadFormV2: function () {
-    let configStorage = this.getStorage();
-
-    let checkedIds = ["conditionPowerOrder", "conditionTimeRange"];
-
-    const regex = /id/gi;
-    let codeTemplate =
-      'let cf = configStorage.get("id") if (cf) { ui.id.setChecked(cf) }';
-    for (let id of checkedIds) {
-      let oneParm = codeTemplate.replace(regex, id);
-      log(oneParm);
-      eval(oneParm);
-    }
-  },
   loadForm: function () {
     // 将本地存储内容，加载到表单上面
     let configStorage = this.getStorage();
-    let conditionPriceRange = configStorage.get("conditionPriceRange");
-    if (conditionPriceRange) {
-      log("conditionPriceRange %s", conditionPriceRange);
-      ui.conditionPriceRange.setChecked(conditionPriceRange);
-    }
-    let minPriceForm = configStorage.get("minPriceForm");
-    if (minPriceForm) {
-      log("minPriceForm %s", minPriceForm);
-      ui.minPriceForm.setText(minPriceForm + "");
-    }
-    let maxPriceForm = configStorage.get("maxPriceForm");
-    if (maxPriceForm) {
-      log("maxPriceForm %s", maxPriceForm);
-      ui.maxPriceForm.setText(maxPriceForm + "");
-    }
-    let conditionStation = configStorage.get("conditionStation");
-    if (conditionStation) {
-      log("conditionStation %s", conditionStation);
-      ui.conditionStation.setChecked(conditionStation);
-    }
-    let fromStation = configStorage.get("fromStation");
-    if (fromStation) {
-      log("fromStation %s", fromStation);
-      ui.fromStation.setText(fromStation + "");
-    }
-    let toStation = configStorage.get("toStation");
-    if (toStation) {
-      log("toStation %s", toStation);
-      ui.toStation.setText(toStation + "");
-    }
+
     let conditionPowerOrder = configStorage.get("conditionPowerOrder");
     if (conditionPowerOrder) {
       log("conditionPowerOrder %s", conditionPowerOrder);
@@ -482,26 +559,7 @@ const CF = {
     // 文本内容设置
 
     // 数值内容设置
-    let minPriceForm = ui.minPriceForm.getText();
-    if (minPriceForm && minPriceForm != "") {
-      configStorage.put("minPriceForm", parseInt(minPriceForm));
-      CF.minPriceForm = parseInt(minPriceForm);
-    }
-    let maxPriceForm = ui.maxPriceForm.getText();
-    if (maxPriceForm && maxPriceForm != "") {
-      configStorage.put("maxPriceForm", parseInt(maxPriceForm));
-      CF.maxPriceForm = parseInt(maxPriceForm);
-    }
-    let fromStation = ui.fromStation.getText();
-    if (fromStation) {
-      configStorage.put("fromStation", fromStation + "");
-      CF.fromStation = fromStation + "";
-    }
-    let toStation = ui.toStation.getText();
-    if (toStation) {
-      configStorage.put("toStation", toStation + "");
-      CF.toStation = toStation + "";
-    }
+
     let maxKm1 = ui.maxKm1.getText();
     if (maxKm1 && maxKm1 != "") {
       configStorage.put("maxKm1", parseInt(maxKm1));
@@ -584,14 +642,6 @@ const CF = {
     }
 
     // 开关条件设置
-    let conditionPriceRange = ui.conditionPriceRange.isChecked();
-    configStorage.put("conditionPriceRange", conditionPriceRange);
-    CF.conditionPriceRange = conditionPriceRange;
-
-    let conditionStation = ui.conditionStation.isChecked();
-    configStorage.put("conditionStation", conditionStation);
-    CF.conditionStation = conditionStation;
-
     let conditionPowerOrder = ui.conditionPowerOrder.isChecked();
     configStorage.put("conditionPowerOrder", conditionPowerOrder);
     CF.conditionPowerOrder = conditionPowerOrder;
@@ -691,25 +741,6 @@ const AutojsXPro = {
 
 const condition = {
   // 两个都匹配才行
-  priceRangeOk: function (order) {
-    if (CF.conditionPriceRange == false) {
-      return true;
-    }
-
-    if (CF.minPriceForm) {
-      if (order.price < CF.minPriceForm) {
-        return false;
-      }
-    }
-
-    if (CF.maxPriceForm) {
-      if (order.price > CF.maxPriceForm) {
-        return false;
-      }
-    }
-
-    return true;
-  },
   _matchOk: function (arr, text) {
     for (let a of arr) {
       if (a == null || a == "") {
@@ -719,35 +750,6 @@ const condition = {
         return true;
       }
     }
-  },
-  // 两个都匹配才行
-  stationOk: function (order) {
-    if (CF.conditionStation == false) {
-      // 没有开启，跳过
-      return true;
-    }
-
-    let regex = /，/gi;
-    if (
-      CF.fromStation != null &&
-      CF.fromStation != "" &&
-      CF.fromStation != NaN
-    ) {
-      let fromKeys = CF.fromStation.trim().replace(regex, ",").split(",");
-      if (!this._matchOk(fromKeys, order.from)) {
-        return false;
-      }
-    }
-
-    if (CF.toStation != null && CF.toStation != "" && CF.toStation != NaN) {
-      let toKeys = CF.toStation.trim().replace(regex, ",").split(",");
-      if (!this._matchOk(toKeys, order.to)) {
-        return false;
-      }
-    }
-
-    // 都没有选，认为匹配。
-    return true;
   },
   // 任何一条匹配就行
   powerOrderOk: function (order) {
@@ -797,49 +799,68 @@ const condition = {
   },
 };
 
-const ChangXing = {
+const YL = {
+  getData: function () {
+    let res = OCR.getPostionByOCR(0, 0, device.width, device.height);
+    // log(res);
+
+    let dataPostion = 0;
+    let order = {};
+    for (let r of res) {
+      if (r.text && r.text.indexOf("收益（元）") > -1) {
+        dataPostion = 1;
+        continue;
+      }
+
+      if (dataPostion == 0) {
+        continue;
+      }
+
+      //有时候下一个是航班号。
+      if (dataPostion == 1 && r.text.indexOf("航班号") > -1) {
+        log("包含航班号");
+        continue;
+      }
+
+      if (dataPostion == 1) {
+        log("里程 %s km", r.text);
+        order.dis = r.text;
+      } else if (dataPostion == 2) {
+        log("预计用时 %s", r.text);
+        order.kmTime = r.text;
+      } else if (dataPostion == 3) {
+        log("收益 %s 元", r.text);
+        order.money = r.text;
+      } else if (r.text == "抢单") {
+        log("找到抢单按钮");
+        data.qiangBounds = r.bounds;
+        break;
+      }
+
+      dataPostion++;
+    }
+
+    log(data);
+
+    return data;
+  },
   findOrder: function () {
     // 确保在那个界面
-    let inOrderUI = AutojsXPro.xx(text("用车时间仅限参考，请自行关注航班动态"));
-    if (!inOrderUI) {
-      // log("当前不在订单弹出框页面")
-      return null;
+    while (1) {
+      sleep(300);
+      let eles = visibleToUser(true)
+        .boundsInside(0, 0, device.width - 1, device.height - 1)
+        .find();
+      if (eles == null) {
+        // 订单弹出页面，获取不到任何的界面数据
+        log("可能弹出订单界面");
+        log("进行截图分析");
+        let order = this.getData();
+        if (order.price != null) {
+          return order;
+        }
+      }
     }
-
-    // 拿到订单的所有数据
-    let order = {};
-
-    // text("2024-04-16 16:16")
-    order.use_date = AutojsXPro.xx(id("cn.vippw.changxing:id/use_date"));
-    if (!order.use_date) {
-      return null;
-    }
-
-    // text("43分钟(36公里)")
-    // text("2小时43分钟(232公里)")
-    order.dis = AutojsXPro.xx(id("cn.vippw.changxing:id/dis"));
-    // 如果为null。快速返回。因为，后面很多阻塞操作。没意义了。
-    if (!order.dis) {
-      return null;
-    }
-
-    order.dis = parseInt(order.dis.replace("公里)", "").split("(")[1]);
-
-    order.price = AutojsXPro.xx(id("cn.vippw.changxing:id/price"));
-    if (!order.price) {
-      return null;
-    }
-
-    order.from = AutojsXPro.xx(id("cn.vippw.changxing:id/from"));
-    if (!order.from) {
-      return null;
-    }
-    order.to = AutojsXPro.xx(id("cn.vippw.changxing:id/to"));
-    if (!order.to) {
-      return null;
-    }
-
-    return order;
   },
   waitForAmazingOrder: function () {
     let oneHour = 1000 * 60 * 60;
@@ -877,14 +898,6 @@ const ChangXing = {
         log("--> 新订单");
         log(order);
         lastOrder = order;
-      }
-
-      if (!condition.priceRangeOk(order)) {
-        continue;
-      }
-
-      if (!condition.stationOk(order)) {
-        continue;
       }
 
       if (!condition.powerOrderOk(order)) {
@@ -977,7 +990,7 @@ const ChangXing = {
         continue;
       }
 
-      let result = this.sheetOrder();
+      let result = this.sheetOrder(order.qiangBounds);
 
       tryCount = tryCount + 1;
       if (result) {
@@ -987,14 +1000,23 @@ const ChangXing = {
       }
     }
   },
-  sheetOrder: function () {
+  sheetOrder: function (bounds) {
     log("执行抢单");
+    // pressBounds(bounds);
 
-    // log("抢单测试")
+    function pressBounds(bounds) {
+      let b = bounds;
+      // log(ele)
+      let halfW = parseInt((b.right - b.left) / 2);
+      let halfH = parseInt((b.bottom - b.top) / 2);
+
+      let x = b.left + halfW;
+      let y = b.top + halfH;
+      log("居中 点击 (%d,%d)", x, y);
+      return press(x, y, 1);
+    }
+    log("抢单测试" + bounds);
     // return false; //测试需要，先注释掉
-
-    let ele = id("sub").text("抢单").findOne(3000);
-    return AutojsXPro.clickEle(ele);
   },
 };
 
@@ -1046,8 +1068,8 @@ ui.bt.click(function () {
   }
 
   threads.start(function () {
-    ChangXing.waitForAmazingOrder();
-    // ChangXing.openTargetLocation()
+    YL.waitForAmazingOrder();
+    // YL.openTargetLocation()
   });
   device.keepScreenOn(3600 * 1000);
   device.setBrightness(2);
@@ -1082,5 +1104,5 @@ ui.emitter.on("resume", function () {
   ui.autoService.checked = auto.service != null;
 });
 
-let order = { dis: 71, price: 132 };
-log(condition.powerOrderOk(order));
+// let order = { dis: 71, price: 132 };
+// log(condition.powerOrderOk(order));

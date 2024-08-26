@@ -130,6 +130,9 @@ function getData() {
   let dataPostion = 0;
   let data = {};
   for (let r of res) {
+    // todo
+    order.use_date = r.text;
+
     if (r.text && r.text.indexOf("收益（元）") > -1) {
       dataPostion = 1;
       continue;
@@ -149,11 +152,11 @@ function getData() {
       log("里程 %s km", r.text);
       data.km = r.text;
     } else if (dataPostion == 2) {
-      log("预计用时 %s", r.text);
-      data.kmTime = r.text;
+      //   log("预计用时 %s", r.text);
+      //   data.kmTime = r.text;
     } else if (dataPostion == 3) {
       log("收益 %s 元", r.text);
-      data.money = r.text;
+      data.price = r.text;
     } else if (r.text == "抢单") {
       log("找到抢单按钮");
       data.qiangBounds = r.bounds;

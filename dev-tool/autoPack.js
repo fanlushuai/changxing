@@ -1,6 +1,3 @@
-const { mutilBuild } = require("./buildConfig");
-
-mutilBuild;
 const Autojsx = {
   boot: function () {
     home();
@@ -32,17 +29,7 @@ const Autojsx = {
       sleep(1000);
     }
   },
-  pack: function (buildDir) {
-    // let projectJsonPath = "./project.json";
-    let projectJsonStr = files.read(projectJsonPath).toString();
-    let projectData = JSON.parse(projectJsonStr);
-
-    let projectName = projectData.name;
-
-    sleep(1000);
-    pageUpBySwipe();
-    sleep(1000);
-
+  pack: function (buildDir, projectName) {
     click(id("name").text(buildDir).findOne());
 
     click(id("build").findOne());
@@ -64,9 +51,6 @@ const Autojsx = {
         now.getMinutes() +
         "-" +
         now.getSeconds();
-
-      // todo 修改
-      verisonName = "2.3.0";
 
       // 保证是int类型
 
@@ -95,17 +79,17 @@ const Autojsx = {
 
     let apkName = setVersion();
 
-    // log("开启 PaddleOCR");
-    // click(scrollUtillFind(text("PaddleOCR")));
+    log("开启 PaddleOCR");
+    click(scrollUtillFind(text("PaddleOCR")));
 
-    // log("开启 打包默认的PaddleOCR训练数据");
-    // click(scrollUtillFind(text("打包默认的PaddleOCR训练数据")));
+    log("开启 打包默认的PaddleOCR训练数据");
+    click(scrollUtillFind(text("打包默认的PaddleOCR训练数据")));
 
     log("关闭 显示启动界面");
     click(scrollUtillFind(text("显示启动界面")));
 
-    // log("开启 需要后台弹出界面权限");
-    // click(scrollUtillFind(text("需要后台弹出界面权限")));
+    log("开启 需要后台弹出界面权限");
+    click(scrollUtillFind(text("需要后台弹出界面权限")));
 
     log("开启 需要无障碍服务");
     click(scrollUtillFind(text("需要无障碍服务")));
@@ -346,11 +330,13 @@ function pageDownBySwipe() {
   swipe(x, h1, x, h2, 100); //向下翻页(从纵坐标6分之5处拖到纵坐标6分之1处)
 }
 
-function build() {
+let projectName = "inHereBuild";
+
+function build(projectName) {
   Autojsx.boot();
   Autojsx.backIfInbuildDir();
 
-  let apkName = Autojsx.pack("inHereBuild");
+  let apkName = Autojsx.pack("inHereBuild", projectName);
   Autojsx.back();
   return apkName;
 }
@@ -361,32 +347,12 @@ function share(apkName) {
   WeiXin.sendTo("文件传输助手", downloadUrl);
 }
 
-// /storage/emulated/0/autojs/lont
-
-// 多版本一起build
-// for (let bf of mutilBuild.buildConfig) {
-//   mutilBuild.fixProjectJson(files.cwd(), bf);
-
-//   let apkName = build(projectData.name);
-//   log(apkName);
-//   sleep(3000);
-// }
+let projectJsonPath = "./project.json";
+let projectJsonStr = files.read(projectJsonPath).toString();
+let projectData = JSON.parse(projectJsonStr);
 
 // log(projectData);
 
-// 只构建本地版
-let projectJsonPath = files.cwd() + "/inHereBuild/" + "project.json";
-
-function useConfig(configNum) {
-  mutilBuild.fixProjectJson(projectJsonPath, mutilBuild.buildConfig[configNum]);
-  mutilBuild.fixProjectJson(
-    files.cwd() + "/inHereBuild/" + "ui.js",
-    mutilBuild.buildConfig[configNum]
-  );
-}
-
-useConfig(2);
-
-let apkName = build();
+let apkName = build(projectData.name);
 log(apkName);
 // share(apkName);
