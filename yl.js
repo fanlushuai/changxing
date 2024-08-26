@@ -125,24 +125,19 @@ ui.layout(
   <frame w="*" h="*" bg="#F6FFE3" gravity="center">
     <vertical>
       <ScrollView>
-        <vertical marginTop="130">
-          <vertical marginLeft="30" marginRight="30" marginTop="40">
-            <horizontal gravity="center">
-              <vertical marginRight="30">
-                <Switch
-                  id="autoService"
-                  text="无障碍服务"
-                  textStyle="bold"
-                  textColor="#000000"
-                  textSize="16sp"
-                  checked="{{auto.service!=null}}"
-                />
-              </vertical>
-            </horizontal>
-            <vertical marginTop="14">
+        <vertical marginTop="30">
+          <vertical marginLeft="30" marginRight="30" marginTop="20">
+            <Switch
+              id="autoService"
+              text="无障碍服务"
+              textStyle="bold"
+              textColor="#000000"
+              textSize="16sp"
+              checked="{{auto.service!=null}}"
+            />
+            <vertical marginTop="16">
               <Switch
                 id="conditionPowerOrder"
-                marginTop="20"
                 text="开启优选订单"
                 textStyle="bold"
                 textColor="#000000"
@@ -364,10 +359,9 @@ ui.layout(
             <vertical marginTop="30" marginLeft="20">
               <text> </text>
               <text> 1. 开启无障碍 </text>
-              <text> 2. 填入金额范围。</text>
-              <text> 3. 点击启动。</text>
-              <text> 4. 手动切换到目标app对应界面。等待自动抢单。</text>
-              <text>注意：开启悬浮窗，可以避免被系统杀掉。</text>
+              <text> 2. 填入内容</text>
+              <text> 3. 点击启动</text>
+              <text> 4. 手动切换到'易联车主出车中...'界面。等待自动抢单。</text>
             </vertical>
           </vertical>
         </vertical>
