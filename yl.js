@@ -1024,8 +1024,8 @@ const YL = {
     }
   },
   sheetOrder: function (bounds) {
-    log("执行抢单");
-    // pressBounds(bounds);
+    log("点击 抢单");
+    pressBounds(bounds);
 
     function pressBounds(bounds) {
       let b = bounds;
@@ -1038,7 +1038,8 @@ const YL = {
       log("居中 点击 (%d,%d)", x, y);
       return press(x, y, 1);
     }
-    slog("抢单测试" + bounds);
+    return true;
+    // slog("抢单测试" + bounds);
     // return false; //测试需要，先注释掉
   },
 };
