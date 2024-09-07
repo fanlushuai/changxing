@@ -110,13 +110,9 @@ const OCR = {
       return true;
     }
   }),
-  getPostionByOCR: function (x, y, w, h) {
+  getPostionByOCR: function () {
     this.autoPermisionScreenCapture();
-    var img = captureScreen(); // 截取当前屏幕图像
-    var clip = images.clip(img, x, y, w, h); // 裁剪图像
-    let res = paddle.ocr(clip);
-    img = null;
-    clip = null;
+    let res = paddle.ocr(captureScreen());
     // [ OcrResult(confidence=0.93765306, preprocessTime=15.0, inferenceTime=465.0, text=20:35, bounds=Rect(85, 37 - 303, 85)),
     //   OcrResult(confidence=0.696329, preprocessTime=15.0, inferenceTime=465.0, text=g4, bounds=Rect(739, 35 - 1020, 87))]
     return res;
@@ -786,9 +782,11 @@ const condition = {
   },
 };
 
+let regex = /[1-9]\d*\.*\d*/;
+
 const YL = {
   getData: function () {
-    let res = OCR.getPostionByOCR(0, 0, device.width, device.height);
+    let res = OCR.getPostionByOCR();
     // log(res);
 
     let dataPostion = 0;
@@ -797,12 +795,8 @@ const YL = {
     for (let r of res) {
       let rText = r.text;
       if (!hasGetTime) {
-        if (
-          rText.indexOf("今天") > -1 ||
-          rText.indexOf("明天") > -1 ||
-          rText.indexOf("后天") > -1 ||
-          rText.indexOf("月") > -1
-        ) {
+        // 今天，明天，后天
+        if (rText.indexOf("天") > -1 || rText.indexOf("月") > -1) {
           // log("日期 %s", rText);
           order.use_date = rText;
           hasGetTime = true;
@@ -822,13 +816,13 @@ const YL = {
 
       //有时候下一个是航班号。
       if (dataPostion == 1 && rText.indexOf("航班号") > -1) {
-        log("包含航班号");
+        // log("包含航班号");
         continue;
       }
 
       if (dataPostion == 1) {
-        if (/[1-9]\d*\.*\d*/.test(rText)) {
-          log("里程 %s km", rText);
+        if (regex.test(rText)) {
+          // log("里程 %s km", rText);
           order.dis = rText;
         } else {
           break;
@@ -837,14 +831,14 @@ const YL = {
         //   log("预计用时 %s", rText);
         //   order.kmTime = rText;
       } else if (dataPostion == 3) {
-        if (/[1-9]\d*\.*\d*/.test(rText)) {
-          log("收益 %s 元", rText);
+        if (regex.test(rText)) {
+          // log("收益 %s 元", rText);
           order.price = rText;
         } else {
           break;
         }
       } else if (rText == "抢单") {
-        log("找到抢单按钮");
+        // log("找到抢单按钮");
         order.qiangBounds = r.bounds;
         break;
       }
@@ -853,7 +847,7 @@ const YL = {
     }
 
     if (order.price && order.dis && order.qiangBounds) {
-      log(order);
+      // log(order);
       return order;
     }
 
@@ -912,7 +906,7 @@ const YL = {
       } else {
         slog("--> 新订单");
         slog("--> 价格 " + order.price + " 公里数 " + order.dis);
-        log(order);
+        // log(order);
         lastOrder = order;
       }
 
@@ -1007,7 +1001,7 @@ const YL = {
       // 匹配到合适订单
       // 排除，是上一个订单。
       if (lastPrice != order.price) {
-        console.warn("### 匹配到订单！%j", order);
+        // console.warn("### 匹配到订单！%j", order);
         slog("### 匹配到订单！" + order.price);
         lastPrice = order.price;
         tryCount = 0;
@@ -1022,10 +1016,10 @@ const YL = {
 
       tryCount = tryCount + 1;
       if (result) {
-        log("抢单点击[%s/%s]成功", tryCount, reTryTimes);
+        // log("抢单点击[%s/%s]成功", tryCount, reTryTimes);
         slog("点击抢单 " + tryCount + "/" + reTryTimes + " 成功");
       } else {
-        log("抢单点击失败");
+        // log("抢单点击失败");
         slog("点击抢单失败");
       }
     }
