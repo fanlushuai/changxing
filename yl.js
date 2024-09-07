@@ -115,6 +115,8 @@ const OCR = {
     var img = captureScreen(); // 截取当前屏幕图像
     var clip = images.clip(img, x, y, w, h); // 裁剪图像
     let res = paddle.ocr(clip);
+    img = null;
+    clip = null;
     // [ OcrResult(confidence=0.93765306, preprocessTime=15.0, inferenceTime=465.0, text=20:35, bounds=Rect(85, 37 - 303, 85)),
     //   OcrResult(confidence=0.696329, preprocessTime=15.0, inferenceTime=465.0, text=g4, bounds=Rect(739, 35 - 1020, 87))]
     return res;
@@ -253,90 +255,91 @@ ui.layout(
                 />{" "}
               </horizontal>
 
-              <Switch
-                id="conditionTimeRange"
-                marginTop="14"
-                text="开启指定时间"
-                textStyle="bold"
-                textColor="#000000"
-                textSize="16sp"
-                checked="false"
-              />
-              <text textColor="red" text="任意条件匹配即可" />
+              <card visibility="gone">
+                <Switch
+                  id="conditionTimeRange"
+                  marginTop="14"
+                  text="开启指定时间"
+                  textStyle="bold"
+                  textColor="#000000"
+                  textSize="16sp"
+                  checked="false"
+                />
+                <text textColor="red" text="任意条件匹配即可" />
 
-              <horizontal marginTop="14" gravity="center">
-                {" "}
-                <checkbox id="cbTimeRange1"></checkbox> <text text="今天 [" />{" "}
-                <input
-                  text="0"
-                  lines="1"
-                  maxLength="6"
-                  inputType="number"
-                  id="minTime1"
-                  w="40"
-                  gravitry="center"
-                />{" "}
-                <text text="," />{" "}
-                <input
-                  text="24"
-                  lines="1"
-                  maxLength="6"
-                  inputType="number"
-                  id="maxTime1"
-                  w="40"
-                  gravitry="center"
-                />{" "}
-                <text text="] (24小时)" />{" "}
-              </horizontal>
-              <horizontal marginTop="0" gravity="center">
-                {" "}
-                <checkbox id="cbTimeRange2"></checkbox> <text text="明天 [" />{" "}
-                <input
-                  text="0"
-                  lines="1"
-                  maxLength="6"
-                  inputType="number"
-                  id="minTime2"
-                  w="40"
-                  gravitry="center"
-                />{" "}
-                <text text="," />{" "}
-                <input
-                  text="24"
-                  lines="1"
-                  maxLength="6"
-                  inputType="number"
-                  id="maxTime2"
-                  w="40"
-                  gravitry="center"
-                />{" "}
-                <text text="] (24小时)" />{" "}
-              </horizontal>
-              <horizontal marginTop="0" gravity="center">
-                {" "}
-                <checkbox id="cbTimeRange3"></checkbox> <text text="后天 [" />{" "}
-                <input
-                  text="0"
-                  lines="1"
-                  maxLength="6"
-                  inputType="number"
-                  id="minTime3"
-                  w="40"
-                  gravitry="center"
-                />{" "}
-                <text text="," />{" "}
-                <input
-                  text="24"
-                  lines="1"
-                  maxLength="6"
-                  inputType="number"
-                  id="maxTime3"
-                  w="40"
-                  gravitry="center"
-                />{" "}
-                <text text="] (24小时)" />{" "}
-              </horizontal>
-
+                <horizontal marginTop="14" gravity="center">
+                  {" "}
+                  <checkbox id="cbTimeRange1"></checkbox> <text text="今天 [" />{" "}
+                  <input
+                    text="0"
+                    lines="1"
+                    maxLength="6"
+                    inputType="number"
+                    id="minTime1"
+                    w="40"
+                    gravitry="center"
+                  />{" "}
+                  <text text="," />{" "}
+                  <input
+                    text="24"
+                    lines="1"
+                    maxLength="6"
+                    inputType="number"
+                    id="maxTime1"
+                    w="40"
+                    gravitry="center"
+                  />{" "}
+                  <text text="] (24小时)" />{" "}
+                </horizontal>
+                <horizontal marginTop="0" gravity="center">
+                  {" "}
+                  <checkbox id="cbTimeRange2"></checkbox> <text text="明天 [" />{" "}
+                  <input
+                    text="0"
+                    lines="1"
+                    maxLength="6"
+                    inputType="number"
+                    id="minTime2"
+                    w="40"
+                    gravitry="center"
+                  />{" "}
+                  <text text="," />{" "}
+                  <input
+                    text="24"
+                    lines="1"
+                    maxLength="6"
+                    inputType="number"
+                    id="maxTime2"
+                    w="40"
+                    gravitry="center"
+                  />{" "}
+                  <text text="] (24小时)" />{" "}
+                </horizontal>
+                <horizontal marginTop="0" gravity="center">
+                  {" "}
+                  <checkbox id="cbTimeRange3"></checkbox> <text text="后天 [" />{" "}
+                  <input
+                    text="0"
+                    lines="1"
+                    maxLength="6"
+                    inputType="number"
+                    id="minTime3"
+                    w="40"
+                    gravitry="center"
+                  />{" "}
+                  <text text="," />{" "}
+                  <input
+                    text="24"
+                    lines="1"
+                    maxLength="6"
+                    inputType="number"
+                    id="maxTime3"
+                    w="40"
+                    gravitry="center"
+                  />{" "}
+                  <text text="] (24小时)" />{" "}
+                </horizontal>
+              </card>
               <horizontal marginTop="14" gravity="center" w="*" h="*">
                 <button
                   id="save"
@@ -400,7 +403,7 @@ const CF = {
   maxTime3: 24,
   getStorage: function () {
     // 更新表单内容，到本地内存
-    return storages.create("yl342343243");
+    return storages.create("yl3ddddd3243");
   },
   loadForm: function () {
     // 将本地存储内容，加载到表单上面
@@ -797,7 +800,8 @@ const YL = {
         if (
           rText.indexOf("今天") > -1 ||
           rText.indexOf("明天") > -1 ||
-          rText.indexOf("后天") > -1
+          rText.indexOf("后天") > -1 ||
+          rText.indexOf("月") > -1
         ) {
           // log("日期 %s", rText);
           order.use_date = rText;
@@ -823,14 +827,22 @@ const YL = {
       }
 
       if (dataPostion == 1) {
-        log("里程 %s km", rText);
-        order.dis = rText;
+        if (/[1-9]\d*\.*\d*/.test(rText)) {
+          log("里程 %s km", rText);
+          order.dis = rText;
+        } else {
+          break;
+        }
       } else if (dataPostion == 2) {
         //   log("预计用时 %s", rText);
         //   order.kmTime = rText;
       } else if (dataPostion == 3) {
-        log("收益 %s 元", rText);
-        order.price = rText;
+        if (/[1-9]\d*\.*\d*/.test(rText)) {
+          log("收益 %s 元", rText);
+          order.price = rText;
+        } else {
+          break;
+        }
       } else if (rText == "抢单") {
         log("找到抢单按钮");
         order.qiangBounds = r.bounds;
@@ -849,22 +861,15 @@ const YL = {
   },
   findOrder: function () {
     // 确保在那个界面
+    let beginTime = new Date().getTime();
+
     while (1) {
       sleep(300);
-      // let eles = visibleToUser(true)
-      //   .boundsInside(0, 0, device.width - 1, device.height - 1)
-      //   .find();
-      // if (eles == null) {
-      //   // 订单弹出页面，获取不到任何的界面数据
-      //   log("可能弹出订单界面");
-      //   log("进行截图分析");
-      //   let order = this.getData();
-      //   if (order) {
-      //     return order;
-      //   }
-      // }
 
-      // test
+      if (new Date().getTime() - beginTime > 10 * 1000) {
+        slog("努力中");
+        beginTime = new Date().getTime();
+      }
 
       let order = this.getData();
       if (order) {
@@ -916,6 +921,8 @@ const YL = {
         continue;
       }
 
+      // 禁用时间条件选择
+      CF.conditionTimeRange = false;
       // 2024-04-16 16:16
       if (CF.conditionTimeRange) {
         // log("对比时间")
@@ -1208,8 +1215,8 @@ function 悬浮() {
   });
   function onClick() {
     if (window.action.getText() == "启动") {
-      线 = threads.start(日志窗口);
-      线1 = threads.start(function () {
+      threads.start(function () {
+        日志窗口();
         YL.waitForAmazingOrder();
       });
       window.action.setText("停止");
