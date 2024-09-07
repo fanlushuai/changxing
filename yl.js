@@ -1099,7 +1099,6 @@ ui.bt.click(function () {
   // }
 
   threads.start(function () {
-    日志窗口();
     home();
     threads.start(悬浮);
     sleep(2000);
