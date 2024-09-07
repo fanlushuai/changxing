@@ -864,7 +864,7 @@ const YL = {
     let beginTime = new Date().getTime();
 
     while (1) {
-      sleep(300);
+      // sleep(300);
 
       if (new Date().getTime() - beginTime > 10 * 1000) {
         slog("努力中");
@@ -900,7 +900,7 @@ const YL = {
     let lastOrder = { price: 0, dis: 0 };
 
     while (1) {
-      sleep(300);
+      // sleep(300);
       // 阻塞函数
       let order = this.findOrder();
       if (order == null) {
